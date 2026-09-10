@@ -1,5 +1,7 @@
 # kirby-chrome-drift-prevention
 
+*This skill is part of the [Kirby Skills Collection](https://github.com/markkirby125/kirby-skills-collection).*
+
 An AI agent skill that prevents "chrome drift" (inconsistent shared navigation, headers, footers) on multi-page static sites. It enforces partials-as-source-of-truth and provides rules for deterministic sync scripts.
 
 ## Key Features
