@@ -79,3 +79,9 @@ To force execution, tell the agent:
 ### Invalid HTML Post-Sync
 **Issue:** Browsers render the site differently, but the files look correct.
 **Solution:** Check for block elements (`<h3>`, `<ul>`) injected inside `<p>` tags. Browsers auto-close paragraphs, causing the DOM to diverge from the source. Close the paragraph before injecting blocks.
+
+## External Resources & Authority Links
+- [MDN Web Docs: Document Object Model (DOM) Architecture](https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model)
+- [W3C HTML Standard & Tag Nesting Rules](https://html.spec.whatwg.org/)
+- [Jamstack Architecture Principles](https://jamstack.org/what-is-jamstack/)
+- [Cloudflare Pages Documentation](https://developers.cloudflare.com/pages/)
