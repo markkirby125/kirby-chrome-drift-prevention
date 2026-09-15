@@ -2,13 +2,14 @@
 name: kirby-chrome-drift-prevention
 description: "Use when addressing or preventing chrome drift (inconsistent shared navigation, headers, footers) on multi-page static sites."
 category: technique
-triggers: [chrome-drift, static-site, html, navigation, partials, mass-edit, sync]
+triggers: [chrome-drift, static-site, partials]
 ---
 # Standard Operating Procedure (SOP): Chrome Drift Prevention — Partials-as-Source-of-Truth for Multi-Page Static Sites
 
 **Document ID:** SOP-ARC-DRIFT-001
-**Origin:** Extracted from a production fix on `berkshireitservices.co.uk` (September 2026), where a nav item added to 77 of 78 hand-replicated pages produced permanent drift that was discovered weeks later by the site owner in a browser.
+**Origin:** Extracted from a production fix on a 78-page flat HTML site (September 2026), where a nav item added to 77 of 78 hand-replicated pages produced permanent drift that was discovered weeks later by the site owner in a browser.
 **Target Scope:** Any static multi-page site (flat HTML, Cloudflare Pages/Workers, S3, or similar) where shared chrome — navigation, header, footer, legal blocks, sitewide CTAs — is physically replicated in every page file. **Not** for platforms with native templating/SSR (those already solve this).
+**Related:** Hide-until-date / edge publish gating is `kirby-scheduled-content`. Do not use this skill for that.
 
 ---
 
