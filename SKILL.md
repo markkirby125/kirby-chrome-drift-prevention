@@ -4,7 +4,7 @@ description: "Use when addressing or preventing chrome drift (inconsistent share
 category: technique
 triggers: [chrome-drift, static-site, partials]
 risk: unverified
-author: william-fitzpatrick
+author: paul-kirby
 tags: [kirby, ai-agent, workflow]
 ---
 
