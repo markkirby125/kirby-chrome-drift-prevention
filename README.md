@@ -2,13 +2,14 @@
 
 *This skill is part of the [Kirby Skills Collection](https://github.com/markkirby125/kirby-skills-collection).*
 
-An AI agent skill that prevents "chrome drift" (inconsistent shared navigation, headers, footers) on multi-page static sites. It enforces partials-as-source-of-truth and provides rules for deterministic sync scripts.
+An AI agent skill that prevents "chrome drift" (inconsistent shared navigation, headers, footers, OpenGraph metadata) on multi-page static sites. It enforces partials-as-source-of-truth and provides rules for deterministic sync scripts.
 
 ## Key Features
 
-- **Drift Detection:** Mechanical rules for spotting inconsistencies across flat HTML files.
-- **Partials-as-Source-of-Truth:** Guidelines for extracting canonical elements into single partial files.
+- **Drift Detection:** Mechanical rules for spotting inconsistencies across flat HTML files and `<head>` metadata.
+- **Partials-as-Source-of-Truth:** Guidelines for extracting canonical elements (`nav`, `footer`, `head-og`) into single partial files.
 - **Deterministic Syncing:** Requirements for building a script to inject partials cleanly with a mandatory `--check` mode.
+- **Mobile SERP Safe Zone:** OpenGraph partial standards (1200x630 dimensioned with centered safe zones) to prevent mobile SERP thumbnail drift.
 - **Pre-Flight Verification:** A strict checklist for content preservation, block nesting, and tag balance.
 
 ## Tech Stack

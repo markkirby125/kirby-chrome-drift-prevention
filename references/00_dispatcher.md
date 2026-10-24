@@ -2,18 +2,19 @@
 
 **Document ID:** SOP-ARC-DRIFT-001
 **Origin:** Extracted from a production fix on a 78-page flat HTML site (September 2026), where a nav item added to 77 of 78 hand-replicated pages produced permanent drift that was discovered weeks later by the site owner in a browser.
-**Target Scope:** Any static multi-page site (flat HTML, Cloudflare Pages/Workers, S3, or similar) where shared chrome — navigation, header, footer, legal blocks, sitewide CTAs — is physically replicated in every page file. **Not** for platforms with native templating/SSR (those already solve this).
+**Target Scope:** Any static multi-page site (flat HTML, Cloudflare Pages/Workers, S3, or similar) where shared chrome — navigation, header, footer, legal blocks, sitewide CTAs, `<head>` OpenGraph metadata — is physically replicated in every page file. **Not** for platforms with native templating/SSR (those already solve this).
 **Related:** Hide-until-date / edge publish gating is `kirby-scheduled-content`. Do not use this skill for that.
 
 ---
 
 ## 1. The Failure Mode This SOP Prevents ("Chrome Drift")
 
-**Anatomy:** Shared chrome is copy-pasted into every page as a frozen photocopy. There is no connection between the copies. Any chrome change must be applied N times (once per page) by hand or script. A missed copy = **drift**: one logical element, N divergent physical versions, no mechanism to detect or repair the inconsistency.
+**Anatomy:** Shared chrome is copy-pasted into every page as a frozen photocopy. There is no connection between the copies. Any chrome change must be applied N times (once per page) by hand or script. A missed copy = **drift**: one logical element, N divergent physical versions, no mechanism to detect or repair the inconsistency. This applies equally to visible layout chrome (`<nav>`, `<footer>`, sitewide banners) and `<head>` metadata (`<meta property="og:image">`, `<meta property="og:description">`, Twitter cards).
 
 **Why it is dangerous:**
 - Drift is **invisible until a human notices it** — often weeks later, on the most important page (the one nobody re-checks is frequently the homepage).
-- The failure compounds: every un-templated element (nav today, footer tomorrow, sitewide CTAs next) multiplies the mutation surface.
+- The failure compounds: every un-templated element (nav today, footer tomorrow, OpenGraph metadata next) multiplies the mutation surface.
+- OpenGraph & SERP thumbnail drift degrades search appearance: broken, outdated, or un-dimensioned `og:image` tags cause Google mobile SERP snippets to display low-resolution, arbitrarily cropped, or missing thumbnails.
 - Mass repairs themselves introduce bugs: invalid nesting (block elements inserted inside `<p>`), variant mismatches, escaped clauses, and double-applied edits.
 
 **Economic signature that you need this SOP:**
@@ -65,7 +66,7 @@ Rules live in the sync script as a literal map — no config files, no magic.
 Requirements (a ~80-line Node or Python script; match the repo's existing script culture):
 
 1. **Deterministic:** same input → same output. No randomness, no timestamps in output.
-2. **Scoped replacement:** replace only the recognised block spans (`<nav…</nav>`, `<footer…</footer>`) via bounded regex or DOM parse. Nothing outside the blocks may change.
+2. **Scoped replacement:** replace only the recognised block spans (`<nav…</nav>`, `<footer…</footer>`, or `<head>` OpenGraph blocks bounded by `<!-- partials:head-og -->`) via bounded regex or DOM parse. Nothing outside the blocks may change.
 3. **`--check` mode (mandatory):** regenerate in memory, diff against disk, report drift per file, **exit non-zero if any drift exists** — no writes. This is the drift alarm; wire it into CI or the deploy pre-flight if the project has one.
 4. **Idempotence (mandatory):** running the sync twice must make the second run a no-op. Verify explicitly.
 5. **Report:** per-page `SYNC`/`DRIFT`/`clean` lines plus a summary count.
@@ -98,6 +99,32 @@ Commit partials + script + migrated pages together (one atomic change). After de
 - **New pages are created with chrome slots and immediately synced.**
 - **Re-run the Step 0 census (nav-scoped) after any major content generation** to confirm the invariant holds.
 
+### Step 8 — Centralized OpenGraph & SERP Snippet Partials (Mobile 1:1 Safe Zone)
+
+*Context & Classification: Practitioner operational heuristic and asset design convention (Tier 3 Operational Convention per [`kirby-aiseo-skill`](../../kirby-aiseo-skill/SKILL.md) Module 19 / [`kirby-seo-telemetry`](../../kirby-seo-telemetry/SKILL.md) Module 15) for mobile SERP snippet visual consistency, preventing `<head>` metadata divergence across multi-page static sites.*
+
+1. **The Mobile Crop Trap**: Google mobile search results render a square (1:1) thumbnail extracted from the page's OpenGraph image or high-priority image tags. Standard social sharing images are formatted at 1.91:1 (e.g., 1200x630 px). When Google generates the 1:1 mobile snippet thumbnail, it crops the center square (`min(width, height) × min(width, height)`).
+2. **The Drift Hazard**: If `<meta property="og:image">` tags are copy-pasted across static pages, image URLs drift, dimensional metadata (`og:image:width`, `og:image:height`) is lost or hardcoded incorrectly, and visual branding is cut off in mobile SERPs.
+3. **Canonical Head Partial (`partials/head-og.html`)**: Extract shared OpenGraph metadata into a canonical partial synced across all site HTML files (bounded by `<!-- partials:head-og -->` markers):
+   ```html
+   <!-- partials/head-og.html -->
+   <meta property="og:site_name" content="{{SITE_NAME}}">
+   <meta property="og:type" content="{{OG_TYPE}}">
+   <meta property="og:title" content="{{PAGE_TITLE}}">
+   <meta property="og:description" content="{{PAGE_DESCRIPTION}}">
+   <meta property="og:url" content="{{PAGE_URL}}">
+   <meta property="og:image" content="{{OG_IMAGE_URL}}">
+   <meta property="og:image:width" content="{{OG_IMAGE_WIDTH}}">
+   <meta property="og:image:height" content="{{OG_IMAGE_HEIGHT}}">
+   <meta property="og:image:alt" content="{{OG_IMAGE_ALT}}">
+   <meta name="twitter:card" content="summary_large_image">
+   <meta name="twitter:image" content="{{OG_IMAGE_URL}}">
+   <meta name="twitter:image:alt" content="{{OG_IMAGE_ALT}}">
+   ```
+4. **The Center Safe Zone Invariant**:
+   - All static site OpenGraph assets must enforce a centered safe zone equal to `min(width, height) × min(width, height)`. For a 1200x630 px canvas, this creates a central 630x630 px square with `(1200 - 630) / 2 = 285 px` lateral margins. Essential logos, product shots, and text elements must stay inside this square to display cleanly in Google mobile SERP snippet cards.
+   - For image photography standards (in-situ real photography vs. sterile catalog cutouts), adhere to [`kirby-text-first-cro`](../../kirby-text-first-cro/SKILL.md) Module 20.
+
 ---
 
 ## 4. Pitfalls (all encountered during the origin fix)
@@ -109,6 +136,7 @@ Commit partials + script + migrated pages together (one atomic change). After de
 5. **Variant blindness in fingerprints** — class-based item extraction misses items whose class differs (`class="nav-link active"` vs `class="nav-link"`), undercounting coverage and misclassifying which pages have an element. Fingerprint on link href + text, not class.
 6. **Exact-string anchors and whitespace** — scripted replacements assert on strings that differ by a `<code>` wrapper, an entity (`&amp;`), or a newline. Always re-extract the exact current bytes before asserting; prefer operating on the containing line/element.
 7. **Two footer variants is not "basically one"** — variant counts of 2 tempt "close enough" handling. Each variant needs its own partial and an explicit page→variant rule.
+8. **Un-dimensioned or off-center OpenGraph assets** — omitting 1200x630 dimensions or ignoring the 630x630 center safe zone leads to broken mobile SERP thumbnails and distorted social cards.
 
 ---
 
@@ -129,5 +157,14 @@ Commit partials + script + migrated pages together (one atomic change). After de
 [ ] Step 5: idempotence proven (second --check = zero updates)
 [ ] Step 6: atomic commit; deployed; one live DOM verification per variant class
 [ ] Step 7: ongoing protocol documented in the project's agent instructions
+[ ] Step 8: head-og.html partial extracted, 1200x630 dimensioned, 630x630 safe zone checked
 ================================================================================
 ```
+
+---
+
+## 🔗 Cross-Skill Routing Invariants
+
+- **Authentic Photography & Visual Cropping**: For establishing in-situ macro photography and mobile-friendly visual assets, route to `../../kirby-text-first-cro/SKILL.md` (Module 20).
+- **Structured Data & Schema Alignment**: For synchronizing OpenGraph metadata with JSON-LD entity structures (`Organization`, `WebPage`, `Article`), route to `../../kirby-technical-aeo/SKILL.md` (Phase 3).
+- **Edge Deployment & Content Scheduling**: For scheduled or gated publishing across static architectures, route to `../../kirby-scheduled-content/SKILL.md`.
