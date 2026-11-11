@@ -98,6 +98,7 @@ Commit partials + script + migrated pages together (one atomic change). After de
 - **Run `--check` on every deploy pre-flight** (and in CI). Any drift report is investigated, never silenced.
 - **New pages are created with chrome slots and immediately synced.**
 - **Re-run the Step 0 census (nav-scoped) after any major content generation** to confirm the invariant holds.
+- **Batch chrome syncs on frozen pages.** A new page or tool under a `FREEZE` entry (directional, single-source; not a Google rule) takes chrome syncs only in batches, held with other filed changes or defect fixes. Timing: `kirby-seo-telemetry` Module 15 §15.2 and `kirby-seo-timing-benchmarks`.
 
 ### Step 8 — Centralized OpenGraph & SERP Snippet Partials (Mobile 1:1 Safe Zone)
 
